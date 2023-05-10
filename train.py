@@ -6,30 +6,43 @@ import torchvision.datasets as datasets
 import pandas as pd
 import multiprocessing as mp
 from PIL import Image
+import matplotlib.pyplot as plt
+from sklearn.metrics import classification_report
 
 
 
-
+loss_list = []
+accuracy_trainging_list = []
 # Train the model
 def trainloop(train_loader):
-    for epoch in range(100):
+    for epoch in range(30):
         running_loss = 0.0
+        total_correct = 0
+        total_samples = 0
         for i, data in enumerate(train_loader, 0):
             inputs,labels = data
             inputs = inputs.to(device)
             labels = labels.to(device)
             optimizer.zero_grad()
             outputs = net(inputs)
-            outputs = outputs.unsqueeze(0)
-            labels = labels.unsqueeze(0)
             loss = criterion(outputs, labels)
+            l1_reg = 0
+            for param in net.parameters():
+                l1_reg += torch.sum(torch.abs(param))
+            loss += l1_lambda * l1_reg
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
-            if i % 100 == 99:
+            _, predicted = torch.max(outputs.data, 1)
+            total_correct += (predicted == labels).sum().item()
+            total_samples += labels.size(0)
+            loss_list.append(loss.item())
+            if i % 40 == 39:
                 print('[%d, %5d] loss: %.3f' % (epoch + 1, i + 1, running_loss / 100))
                 running_loss = 0.0
-
+        accuracy = 100.0 * total_correct / total_samples
+        accuracy_trainging_list.append(accuracy)
+        print('Accuracy on epoch %d: %d %%' % (epoch + 1, accuracy))
     print('Finished Training')
 
 if __name__ == '__main__':
@@ -71,10 +84,10 @@ if __name__ == '__main__':
 
 
     # create data loaders to load the data in batches
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=7,
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=16,
                                                shuffle=True, num_workers=8)
 
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=7,
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=16,
                                              shuffle=False, num_workers=8)
     class Net(nn.Module):
         def __init__(self):
@@ -83,7 +96,7 @@ if __name__ == '__main__':
             self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
             self.conv2 = nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1)
             self.fc1 = nn.Linear(32 * 64 * 64, 256)
-            self.fc2 = nn.Linear(256, 7)
+            self.fc2 = nn.Linear(256, 10)
 
         def forward(self, x):
             x = self.pool(nn.functional.relu(self.conv1(x)))
@@ -98,22 +111,44 @@ if __name__ == '__main__':
 
     # Define the loss function and optimizer
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr=0.01, momentum=0.9)
+    optimizer = optim.SGD(net.parameters(), lr=0.003, momentum=0.9)
+    l1_lambda = 0.001
 
     trainloop(train_loader)
 
     # Test the network on the test dataset
     net.eval()
-    correct = 0
     total = 0
+    correct = 0
+    true_labels = []
+    predicted_labels = []
     with torch.no_grad():
-        for data in test_loader:
-            images, labels = data
-            images = images.to(device)
+        for inputs, labels in test_loader:
+            inputs = inputs.to(device)
             labels = labels.to(device)
-            outputs = net(images)
-            _, predicted = torch.max(outputs.data, 1)
+            outputs = net(inputs)
+            _, predicted = torch.max(outputs, 1)
+            true_labels += labels.tolist()
+            predicted_labels += predicted.tolist()
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
 
-    print('Accuracy on test set: %d %%' % (100 * correct / total))
+    print('Test accuracy:', correct / total)
+
+    # Calculate precision and recall
+    report = classification_report(true_labels, predicted_labels, zero_division=1)
+
+    print(report)
+
+
+    plt.plot(loss_list)
+    plt.xlabel('Iterations')
+    plt.ylabel('Loss')
+    plt.title('Training Loss Curve')
+    plt.show()
+
+    plt.plot(accuracy_trainging_list)
+    plt.xlabel('epoch')
+    plt.ylabel('accuracy')
+    plt.title('Training accuracy Curve')
+    plt.show()

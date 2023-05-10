@@ -40,7 +40,7 @@ plt.show()
 
 # x is the longitude.
 # y is the latitude.
-i = 0
+i = 206
 for index, row in data.iterrows():
     y = row['latitude']
     x = row['longitude']
