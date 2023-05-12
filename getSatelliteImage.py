@@ -4,7 +4,7 @@ import random
 import pandas as pd
 
 data = pd.read_excel('newsatel.xlsx')
-gmaps = googlemaps.Client(key='AIzaSyB7d-wrNrXQfEX51oEVmc-bO6E9kaClBWI')
+gmaps = googlemaps.Client(key='IzaSyB7d-wrNrXQfEX51oEVmc-bO6E9kaClBWI')
 i = 206
 for index, row in data.iterrows():
     i = i + 1
