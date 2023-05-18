@@ -15,7 +15,7 @@ loss_list = []
 accuracy_trainging_list = []
 # Train the model
 def trainloop(train_loader):
-    for epoch in range(30):
+    for epoch in range(75):
         running_loss = 0.0
         total_correct = 0
         total_samples = 0
@@ -37,7 +37,7 @@ def trainloop(train_loader):
             total_correct += (predicted == labels).sum().item()
             total_samples += labels.size(0)
             loss_list.append(loss.item())
-            if i % 40 == 39:
+            if i % 30 == 29:
                 print('[%d, %5d] loss: %.3f' % (epoch + 1, i + 1, running_loss / 100))
                 running_loss = 0.0
         accuracy = 100.0 * total_correct / total_samples
@@ -48,11 +48,11 @@ def trainloop(train_loader):
 if __name__ == '__main__':
 
     # Read Excel file and extract the labels
-    train_label_df = pd.read_excel('trainlabel.xlsx')
+    train_label_df = pd.read_excel('trainlabel_zoom=15.xlsx')
     train_labels = train_label_df['label'].tolist()
 
     # Read Excel file and extract the labels
-    test_label_df = pd.read_excel('testlabel.xlsx')
+    test_label_df = pd.read_excel('testlabel_zoom=15.xlsx')
     test_labels = test_label_df['label'].tolist()
 
     # check if GPU is available
@@ -75,11 +75,11 @@ if __name__ == '__main__':
 ])
 
     # load the training set
-    train_dataset = datasets.ImageFolder(root='trainset',
+    train_dataset = datasets.ImageFolder(root='trainset_zoom=15',
                                           transform=train_transform)
 
     # load the test set
-    test_dataset = datasets.ImageFolder(root='testset',
+    test_dataset = datasets.ImageFolder(root='testset_zoom=15',
                                        transform=test_transform)
 
 
@@ -111,7 +111,7 @@ if __name__ == '__main__':
 
     # Define the loss function and optimizer
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr=0.003, momentum=0.9)
+    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
     l1_lambda = 0.001
 
     trainloop(train_loader)

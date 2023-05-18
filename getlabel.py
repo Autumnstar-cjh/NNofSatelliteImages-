@@ -30,17 +30,17 @@ df_shp = df_shp.fillna(0.0)
 fig, ax = plt.subplots(figsize=(8, 8))
 
 ax.axis('off') # remove the axis
-df_shp.plot(column = 'inc_median_household', cmap = 'plasma', legend=True,
-            legend_kwds={'label': "median household income", 'orientation': "vertical", 'shrink': 0.3},
+df_shp.plot(column = 'travel_driving_ratio', cmap = 'plasma', legend=True,
+            legend_kwds={'label': "travel by driving ratio", 'orientation': "vertical", 'shrink': 0.3},
             ax = ax)
-ax.set_title('median household income')
+ax.set_title('travel by driving ratio')
 
 plt.tight_layout()
 plt.show()
 
 # x is the longitude.
 # y is the latitude.
-i = 206
+i = 0
 for index, row in data.iterrows():
     y = row['latitude']
     x = row['longitude']
@@ -48,11 +48,11 @@ for index, row in data.iterrows():
 
     ax.axis('off') # remove the axies
     # df_shp.plot(facecolor="None", edgecolor='black', linewidth=0.1, ax = ax)
-    df_shp.plot(column = 'inc_median_household', cmap = 'magma', legend=True, alpha = 1.0,
-            vmin = 50000, vmax = 300000,
-            legend_kwds={'label': "median household income", 'orientation': "vertical", 'shrink': 0.3},
+    df_shp.plot(column = 'travel_driving_ratio', cmap = 'magma', legend=True, alpha = 1.0,
+            vmin = 0, vmax = 1,
+            legend_kwds={'label': "travel by driving ratio", 'orientation': "vertical", 'shrink': 0.3},
             ax = ax)
-    ax.set_title('median household income')
+    ax.set_title('travel by driving ratio')
 
     ax.set_xlim(x, x + 0.00001)
     ax.set_ylim(y, y + 0.00001)
