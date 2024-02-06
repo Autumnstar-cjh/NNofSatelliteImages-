@@ -14,6 +14,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch.nn.init as init
 
+
+
+# Residual Block
 loss_list = []
 residuals = []
 l1_loss = nn.L1Loss()
@@ -27,7 +30,7 @@ class CustomDataset(torch.utils.data.Dataset):
         return len(self.targets)
 
     def __getitem__(self, idx):
-        image_path = os.path.join(self.root_dir, f'{idx + 1}.png')
+        image_path = os.path.join(self.root_dir, f'{idx + 1}.jpg')
         image = Image.open(image_path).convert('RGB')
 
         target = self.targets[idx]
@@ -39,7 +42,7 @@ class CustomDataset(torch.utils.data.Dataset):
 
 # Train the model
 def trainloop(train_loader):
-    num_epoch = 30
+    num_epoch = 50
     for epoch in range(num_epoch):
         running_loss = 0.0
 
@@ -80,7 +83,7 @@ def trainloop(train_loader):
 if __name__ == '__main__':
 
     # Read Excel file and extract the labels
-    train_label_df = pd.read_excel('trainlabel.xlsx')
+    train_label_df = pd.read_excel('trainlabel_travel_walk_ratio.xlsx')
     train_labels = train_label_df['target'].tolist()
 
     # Read Excel file and extract the labels
@@ -111,10 +114,10 @@ if __name__ == '__main__':
 
 
     # create data loaders to load the data in batches
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=16,
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=8,
                                                shuffle=True, num_workers=8)
 
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=16,
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=8,
                                              shuffle=False, num_workers=8)
 
     class ResidualBlock(nn.Module):
@@ -143,7 +146,7 @@ if __name__ == '__main__':
             return out
 
     class ResNet(nn.Module):
-        def __init__(self, num_layers=2, num_channels=64, num_classes=1):
+        def __init__(self, num_layers=4, num_channels=64, num_classes=1):
             super(ResNet, self).__init__()
             self.in_channels = num_channels
             self.conv1 = nn.Conv2d(3, num_channels, kernel_size=3, stride=1, padding=1, bias=False)
@@ -182,7 +185,7 @@ if __name__ == '__main__':
 
     # Define the loss function and optimizer
     criterion = nn.L1Loss()
-    optimizer = optim.SGD(net.parameters(), lr=0.015,momentum = 0.9)
+    optimizer = optim.SGD(net.parameters(), lr=0.01,momentum = 0.9)
 
     trainloop(train_loader)
 
@@ -209,9 +212,9 @@ if __name__ == '__main__':
     for i in range(len(predicted_labels)):
         if predicted_labels[i] >= 1:
             predicted_labels[i] = 1
+        if predicted_labels[i] <= 0.5:
+            predicted_labels[i] = 0.5
 
-        if predicted_labels[i] <= 0.6:
-            predicted_labels[i] = 0.6
 
     predicted_labels = torch.tensor(predicted_labels)
     true_labels = torch.tensor(true_labels)

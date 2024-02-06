@@ -5,58 +5,49 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pysal.lib import weights
 from pysal.lib import cg as geometry
+from shapely import Point
 
-data = pd.read_excel('newsatel.xlsx')
+data = pd.read_excel('CA_coordinates.xlsx')
+df = pd.read_csv('California_ct.csv', index_col=0)
+CA_shapefile = gpd.read_file('tl_2020_06_tract/tl_2020_06_tract.shp')
 
-df = pd.read_csv('Florida_ct.csv', index_col = 0)
-florida_shapefile = gpd.read_file('tl_2020_12_tract/tl_2020_12_tract.shp') # read the shapefile
-print(df.shape)
-print(florida_shapefile.shape)
-florida_shapefile.plot(figsize = (10,10))
+# Convert the column types to match for merging
+df['full_ct_fips'] = df['full_ct_fips'].astype('int64')
+CA_shapefile['GEOID'] = CA_shapefile['GEOID'].astype('int64')
 
+df_shp = pd.merge(CA_shapefile, df, how='left', left_on='GEOID', right_on='full_ct_fips')
 
-# adjust the object types to facilitate the merge
-florida_shapefile['GEOID'] = florida_shapefile.GEOID.astype('int64')
+new_df = pd.DataFrame(columns=['travel_driving_ratio'])
 
-# combine the dataframe with the shapefile.
-# Note that it is important to choose how - e.g., inner, right, left, etc. Here I choose 'left' for teaching purposes.
-df_shp = florida_shapefile.merge(df,
-                                 how = 'left',
-                                 left_on = 'GEOID',
-                                 right_on = 'full_ct_fips')
+middle_points = []
 
-print(df_shp.shape)
-df_shp = df_shp.fillna(0.0)
-fig, ax = plt.subplots(figsize=(8, 8))
+for idx, row in CA_shapefile.iterrows():
+    centroid = row['geometry'].centroid
+    middle_points.append((centroid.x, centroid.y))
 
-ax.axis('off') # remove the axis
-df_shp.plot(column = 'travel_driving_ratio', cmap = 'plasma', legend=True,
-            legend_kwds={'label': "travel by driving ratio", 'orientation': "vertical", 'shrink': 0.3},
-            ax = ax)
-ax.set_title('travel by driving ratio')
+i = 1
 
-plt.tight_layout()
-plt.show()
-
-# x is the longitude.
-# y is the latitude.
-i = 0
 for index, row in data.iterrows():
+
     y = row['latitude']
     x = row['longitude']
     fig, ax = plt.subplots(figsize=(8, 8))
 
-    ax.axis('off') # remove the axies
-    # df_shp.plot(facecolor="None", edgecolor='black', linewidth=0.1, ax = ax)
-    df_shp.plot(column = 'travel_driving_ratio', cmap = 'magma', legend=True, alpha = 1.0,
-            vmin = 0, vmax = 1,
-            legend_kwds={'label': "travel by driving ratio", 'orientation': "vertical", 'shrink': 0.3},
-            ax = ax)
-    ax.set_title('travel by driving ratio')
+    ax.axis('off')
+    df_shp.plot(column='travel_driving_ratio', cmap='magma', legend=True, alpha=1.0,
+                vmin=0, vmax=1,
+                legend_kwds={'label': "travel_driving_ratio", 'orientation': "vertical", 'shrink': 0.3},
+                ax=ax)
+    ax.set_title('travel_driving_ratio')
 
     ax.set_xlim(x, x + 0.00001)
     ax.set_ylim(y, y + 0.00001)
-    i = i + 1
     plt.tight_layout()
-    plt.savefig("plot{}.png".format(i))
 
+    travel_driving_ratio = df_shp.loc[df_shp.geometry.contains(Point(x, y)), 'travel_driving_ratio'].values[0]
+
+    new_df = new_df.append({'Number': i, 'target': travel_driving_ratio}, ignore_index=True)
+    i = i + 1
+    plt.close()
+
+new_df.to_excel('CAlabel_travel_driving_ratio.xlsx', index=False)
