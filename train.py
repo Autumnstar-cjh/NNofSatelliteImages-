@@ -27,7 +27,7 @@ class CustomDataset(torch.utils.data.Dataset):
         return len(self.targets)
 
     def __getitem__(self, idx):
-        image_path = os.path.join(self.root_dir, f'{idx + 1}.png')
+        image_path = os.path.join(self.root_dir, f'{idx + 1}.jpg')
         image = Image.open(image_path).convert('RGB')
 
         target = self.targets[idx]
@@ -80,12 +80,12 @@ def trainloop(train_loader):
 if __name__ == '__main__':
 
     # Read Excel file and extract the labels
-    train_label_df = pd.read_excel('trainlabel.xlsx')
-    train_labels = train_label_df['target'].tolist()
+    train_label_df = pd.read_csv('FL_Dataset/FL_allmatch_data_train.csv')
+    train_labels = train_label_df['travel_driving_ratio'].tolist()
 
     # Read Excel file and extract the labels
-    test_label_df = pd.read_excel('testlabel.xlsx')
-    test_labels = test_label_df['target'].tolist()
+    test_label_df = pd.read_csv('FL_Dataset/FL_allmatch_data_test.csv')
+    test_labels = test_label_df['travel_driving_ratio'].tolist()
 
     # check if GPU is available
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -106,8 +106,8 @@ if __name__ == '__main__':
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
 
-    train_dataset = CustomDataset(root_dir='trainset_zoom=13STseg', targets=train_labels, transform=train_transform)
-    test_dataset = CustomDataset(root_dir='testset_zoom=13STseg', targets=test_labels, transform=test_transform)
+    train_dataset = CustomDataset(root_dir='FL_Dataset/trainset_zoom=13ST', targets=train_labels, transform=train_transform)
+    test_dataset = CustomDataset(root_dir='FL_Dataset/testset_zoom=13ST', targets=test_labels, transform=test_transform)
 
 
     # create data loaders to load the data in batches
@@ -143,7 +143,7 @@ if __name__ == '__main__':
             return out
 
     class ResNet(nn.Module):
-        def __init__(self, num_layers=2, num_channels=64, num_classes=1):
+        def __init__(self, num_layers=4, num_channels=64, num_classes=1):
             super(ResNet, self).__init__()
             self.in_channels = num_channels
             self.conv1 = nn.Conv2d(3, num_channels, kernel_size=3, stride=1, padding=1, bias=False)
@@ -210,8 +210,8 @@ if __name__ == '__main__':
         if predicted_labels[i] >= 1:
             predicted_labels[i] = 1
 
-        if predicted_labels[i] <= 0.6:
-            predicted_labels[i] = 0.6
+        if predicted_labels[i] <= 0.7:
+            predicted_labels[i] = 0.7
 
     predicted_labels = torch.tensor(predicted_labels)
     true_labels = torch.tensor(true_labels)

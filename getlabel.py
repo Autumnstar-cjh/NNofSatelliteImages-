@@ -7,21 +7,21 @@ from pysal.lib import weights
 from pysal.lib import cg as geometry
 from shapely import Point
 
-data = pd.read_excel('CA_coordinates.xlsx')
-df = pd.read_csv('California_ct.csv', index_col=0)
-CA_shapefile = gpd.read_file('tl_2020_06_tract/tl_2020_06_tract.shp')
+data = pd.read_excel('FL_DataSet/FL_coordinates_newbig_train.xlsx')
+df = pd.read_csv('Florida_ct.csv', index_col=0)
+FL_shapefile = gpd.read_file('tl_2020_12_tract/tl_2020_12_tract.shp')
 
 # Convert the column types to match for merging
 df['full_ct_fips'] = df['full_ct_fips'].astype('int64')
-CA_shapefile['GEOID'] = CA_shapefile['GEOID'].astype('int64')
+FL_shapefile['GEOID'] = FL_shapefile['GEOID'].astype('int64')
 
-df_shp = pd.merge(CA_shapefile, df, how='left', left_on='GEOID', right_on='full_ct_fips')
+df_shp = pd.merge(FL_shapefile, df, how='left', left_on='GEOID', right_on='full_ct_fips')
 
 new_df = pd.DataFrame(columns=['travel_driving_ratio'])
 
 middle_points = []
 
-for idx, row in CA_shapefile.iterrows():
+for idx, row in FL_shapefile.iterrows():
     centroid = row['geometry'].centroid
     middle_points.append((centroid.x, centroid.y))
 
@@ -50,4 +50,4 @@ for index, row in data.iterrows():
     i = i + 1
     plt.close()
 
-new_df.to_excel('CAlabel_travel_driving_ratio.xlsx', index=False)
+new_df.to_excel('FLlabel_travel_driving_ratio.xlsx', index=False)

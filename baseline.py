@@ -1,43 +1,36 @@
 import pandas as pd
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import r2_score
+import statsmodels.api as sm
 
 # 读取自变量数据表
-edu_bachelor = pd.read_excel('FL_Dataset/testlabel_edu_bachelor_ratio.xlsx')
-edu_master = pd.read_excel('FL_Dataset/testlabel_edu_master_ratio.xlsx')
-edu_phd = pd.read_excel('FL_Dataset/testlabel_edu_phd_ratio.xlsx')
-employment_unemployed = pd.read_excel('FL_Dataset/testlabel_employment_unemployed_ratio.xlsx')
-household_size_avg = pd.read_excel('FL_Dataset/testlabel_household_size_avg.xlsx')
-inc_median_ind = pd.read_excel('FL_Dataset/testlabel_inc_median_ind.xlsx')
-race_black_ratio = pd.read_excel('FL_Dataset/testlabel_race_black_ratio.xlsx')
-race_white_ratio = pd.read_excel('FL_Dataset/testlabel_race_white_ratio.xlsx')
-sex_male_ratio = pd.read_excel('FL_Dataset/testlabel_sex_male_ratio.xlsx')
-vehicle_per_capita = pd.read_excel('FL_Dataset/testlabel_vehicle_per_capita.xlsx')
+independent_variables = pd.read_csv('FL_DataSet/FL_allmatch_data_train.csv')
 
-# 读取因变量数据表
-target = pd.read_excel('FL_Dataset/testlabel.xlsx')['target']
+# Reading the dependent variable
+target = pd.read_csv('FL_Dataset/FL_allmatch_data_train.csv')['travel_driving_ratio']
 
-# 合并自变量数据表
-data = pd.concat([edu_bachelor['target'], edu_master['target'], edu_phd['target'],
-                  employment_unemployed['target'], household_size_avg['target'],
-                  inc_median_ind['target'], race_black_ratio['target'], race_white_ratio['target'],
-                  sex_male_ratio['target'], vehicle_per_capita['target']], axis=1)
+# 选择自变量
+data = independent_variables[['edu_bachelor_ratio', 'edu_master_ratio', 'edu_phd_ratio',
+                              'employment_unemployed_ratio', 'household_size_avg', 'inc_median_ind',
+                              'race_black_ratio', 'race_white_ratio', 'sex_male_ratio', 'vehicle_per_capita']]
 
-new_variables = pd.read_csv('LoveDA/test_class_ratios.csv').drop(columns=['Image Name'])
+# Loading the new variables
+new_variables = pd.read_csv('FL_DataSet/train_class_ratios.csv').drop(columns=['Image Name'])
 
-data = pd.concat([data, new_variables], axis=1)
+# Concatenating the new variables with the existing DataFrame
+data_with_new_vars = pd.concat([data, new_variables], axis=1)
+
+# 添加常数项，以便拟合截距项
+data_with_new_vars = sm.add_constant(data_with_new_vars)
 
 # 创建线性回归模型
-model = LinearRegression()
+model = sm.OLS(target, data_with_new_vars)
 
 # 拟合模型
-model.fit(data, target)
+results = model.fit()
 
-# 预测因变量
-predictions = model.predict(data)
+# 输出模型摘要
+print(results.summary())
 
-# 计算 R-squared
-r2 = r2_score(target, predictions)
+# 如果需要，也可以将模型摘要写入文件
+with open('OLS_Baseline_Summary.txt', 'w') as f:
+    f.write(results.summary().as_text())
 
-# 打印 R-squared
-print("R-squared:", r2)
